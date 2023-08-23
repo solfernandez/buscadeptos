@@ -75,7 +75,13 @@ def get_selenium_driver():
     options = Options()
     options.set_preference('intl.accept_languages', 'es')
     options.add_argument('-headless')
-    driver = webdriver.Firefox(options=options)
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+
+    geckodriver_path = "/snap/bin/geckodriver"
+    from selenium.webdriver.firefox.service import Service
+    driver_service = Service(executable_path=geckodriver_path)
+    driver = webdriver.Firefox(options=options, service=driver_service)
     return driver
 
 def process(db_path):
