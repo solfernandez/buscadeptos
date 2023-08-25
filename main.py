@@ -84,14 +84,11 @@ def get_selenium_driver():
     driver = webdriver.Firefox(options=options, service=driver_service)
     return driver
 
-def send_message(message):
-    TOKEN = args.TOKEN
-    chat_id = args.chat_id
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+def send_message(token, chat_id, msg):
+    url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={msg}"
     requests.get(url).json()
 
-
-def process(db_path):
+def process(db_path, args):
     urls = [
         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar.html",
         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-2.html",
@@ -108,6 +105,8 @@ def process(db_path):
         logger.info("Sleeping for %ds", TIME_BETWEEN_REQUESTS_S)
         time.sleep(TIME_BETWEEN_REQUESTS_S)
 
+    TOKEN = args.TOKEN
+    chat_id = args.chat_id
     nuevos = 0
     if processing_pubs:
         stored_pubs = load_from_db(db_path)
@@ -116,7 +115,7 @@ def process(db_path):
                 stored_pubs[pub.pub_id] = pub
                 nuevos += 1
                 logger.info("Nueva publicacion: %s %s", pub.pub_id, pub.url)
-                send_message(f"Nueva publicacion:{pub.url}. Precio:{pub.price}")
+                send_message(TOKEN, chat_id, f"Nueva publicacion:{pub.url}. Precio:{pub.price}")
         save_to_db(db_path, stored_pubs)
     logger.info("Nuevos %d", nuevos)
 
@@ -134,7 +133,7 @@ if __name__ == '__main__':
     db_path = "pubs.pickle"
 
     if args.cmd == "process":
-        process(db_path)
+        process(db_path, args)
 
     elif args.cmd == "list":
         pubs = load_from_db(db_path)
@@ -144,12 +143,7 @@ if __name__ == '__main__':
     elif args.cmd == 'bot':
         TOKEN = args.TOKEN
         chat_id = args.chat_id
-        message = "fkjnhdjknhkdfj"
-        send_message(message)
+        message = "holis"
+        send_message(TOKEN, chat_id, message)
 
 
-def send_message(msg):
-    TOKEN = args.TOKEN
-    chat_id = args.chat_id
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={msg}"
-    requests.get(url).json()
