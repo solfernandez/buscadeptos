@@ -84,10 +84,19 @@ def get_selenium_driver():
     driver = webdriver.Firefox(options=options, service=driver_service)
     return driver
 
+def send_message(message):
+    TOKEN = args.TOKEN
+    chat_id = args.chat_id
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message}"
+    requests.get(url).json()
+
+
 def process(db_path):
     urls = [
-        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-15-dias-menos-800-dolar.html",
-        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-15-dias-menos-800-dolar-pagina-2.html"
+        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar.html",
+        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-2.html",
+        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-3.html",
+        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-4.html"
     ]
     processing_pubs: list[Publicacion] = []
     for url in urls:
@@ -107,6 +116,7 @@ def process(db_path):
                 stored_pubs[pub.pub_id] = pub
                 nuevos += 1
                 logger.info("Nueva publicacion: %s %s", pub.pub_id, pub.url)
+                send_message(f"Nueva publicacion:{pub.url}. Precio:{pub.price}")
         save_to_db(db_path, stored_pubs)
     logger.info("Nuevos %d", nuevos)
 
@@ -134,6 +144,12 @@ if __name__ == '__main__':
     elif args.cmd == 'bot':
         TOKEN = args.TOKEN
         chat_id = args.chat_id
-        message = "estuvo rico el guiso ;)"
-        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={message1}"
-        print(requests.get(url).json())  # this sends the message
+        message = "fkjnhdjknhkdfj"
+        send_message(message)
+
+
+def send_message(msg):
+    TOKEN = args.TOKEN
+    chat_id = args.chat_id
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage?chat_id={chat_id}&text={msg}"
+    requests.get(url).json()
