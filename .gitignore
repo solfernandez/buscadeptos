@@ -1,2 +1,5 @@
 venv
 token_id.txt
+.idea
+geckodriver.log
+pubs.pickle
