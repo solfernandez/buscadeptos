@@ -93,7 +93,7 @@ def send_message(token, chat_id, msg):
 
 def discarded_pub(pub, filters):
     for word in filters:
-        if word in pub.description or word in pub.location:
+        if word in pub.description.lower() or word in pub.location.lower():
             return True
     return False
 
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     db_path = "pubs.pickle"
-    filters = ['Temporario', 'temporario', 'amoblado', 'amueblado', 'Mataderos', 'Liniers', 'Versalles', 'Barrio norte', 'Recoleta', 'Villa Devoto', 'Devoto']
+    filters = ['temporario', 'amoblado', 'amueblado', 'mataderos', 'liniers', 'versalles', 'barrio norte', 'recoleta', 'villa devoto', 'devoto']
 
     if args.cmd == "process":
         process(db_path, args, filters)
