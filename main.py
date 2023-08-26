@@ -70,6 +70,7 @@ def save_to_db(db_path, pubs: dict[str, Publicacion]) -> None:
     with open(db_path, "wb") as f:
         return pickle.dump(pubs, f, protocol=4)
 
+
 def get_selenium_driver():
     from selenium.webdriver.firefox.options import Options
     options = Options()
@@ -84,17 +85,27 @@ def get_selenium_driver():
     driver = webdriver.Firefox(options=options, service=driver_service)
     return driver
 
+
 def send_message(token, chat_id, msg):
     url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={msg}"
     requests.get(url).json()
 
-def process(db_path, args):
+
+def discarded_pub(pub, filters):
+    for word in filters:
+        if word in pub.description or word in pub.location:
+            return True
+    return False
+
+
+def process(db_path, args, filters):
     urls = [
         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar.html",
         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-2.html",
         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-3.html",
         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-4.html"
     ]
+
     processing_pubs: list[Publicacion] = []
     for url in urls:
         html = get_listado_selenium(url)
@@ -111,11 +122,11 @@ def process(db_path, args):
     if processing_pubs:
         stored_pubs = load_from_db(db_path)
         for pub in processing_pubs:
-            if pub.pub_id not in stored_pubs:
+            if pub.pub_id not in stored_pubs and not discarded_pub(pub, filters):
                 stored_pubs[pub.pub_id] = pub
                 nuevos += 1
                 logger.info("Nueva publicacion: %s %s", pub.pub_id, pub.url)
-                send_message(TOKEN, chat_id, f"Nueva publicacion:{pub.url}. Precio:{pub.price}")
+                send_message(TOKEN, chat_id, f"Nueva publicion: {pub.url}. Barrio: {pub.location} Precio: {pub.price}.")
         save_to_db(db_path, stored_pubs)
     logger.info("Nuevos %d", nuevos)
 
@@ -131,9 +142,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     db_path = "pubs.pickle"
+    filters = ['Temporario', 'temporario', 'amoblado', 'amueblado', 'Mataderos', 'Liniers', 'Versalles', 'Barrio norte', 'Recoleta', 'Villa Devoto', 'Devoto']
 
     if args.cmd == "process":
-        process(db_path, args)
+        process(db_path, args, filters)
 
     elif args.cmd == "list":
         pubs = load_from_db(db_path)
