@@ -4,13 +4,13 @@ import requests
 import logging
 import time
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 from dataclasses import dataclass
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger()
 
 TIME_BETWEEN_REQUESTS_S = 5
+
 
 @dataclass
 class Publicacion:
@@ -37,8 +37,6 @@ def get_listado_selenium(url):
     browser = get_selenium_driver()
     browser.get(url)
     logger.info("Browsing %s", url)
-    WebDriverWait(browser, 10).until(lambda d: d.find_elements(webdriver.common.by.By.CSS_SELECTOR, "div[data-qa='cookies-policy-banner']"))
-    browser.find_elements(webdriver.common.by.By.CSS_SELECTOR, "div[data-qa='cookies-policy-banner']")[0].click()
     html = browser.page_source
     browser.close()
     return html
