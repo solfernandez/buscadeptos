@@ -57,6 +57,27 @@ def zonaprop_extraer_de_listado(html: str) -> list[Publicacion]:
     return result
 
 
+def argenprop_extraer_de_listado(html: str) -> list[Publicacion]:
+    soup = BeautifulSoup(html, "lxml")
+    result = []
+    for element in soup.find_all("div", {"class": "listing__item"}):
+        a = element.find_all("a")[0]
+        url = "https://argenprop.com.ar" + a.attrs['href']
+        pub_id = a.attrs['data-item-card']
+        price_el = element.find_all("p", {"class": "card__price"})[0]
+        price = " ".join(price_el.text.split()[:2])
+        address_el = element.find_all("h2", {"class": "card__address"})[0]
+        address = " ".join(address_el.text.split())  # incluir en la description
+        location_el = element.find_all("p", {"class": "card__title--primary show-mobile"})[0]
+        location = " ".join(location_el.text.split())
+        info_el = element.find_all("p", {"class": "card__info"})[0]
+        info = " ".join(info_el.text.split())
+        description = info + address
+        pub = Publicacion(url=url, description=description, location=location, price=price, pub_id=pub_id)
+        result.append(pub)
+    return result
+
+
 def load_from_db(db_path) -> dict[str, Publicacion]:
     if not os.path.exists(db_path):
         return {}
@@ -98,19 +119,33 @@ def discarded_pub(pub, filters):
 
 def process(db_path, args, filters):
     urls = [
-        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar.html",
-        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-2.html",
-        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-3.html",
-        "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-4.html"
+        (zonaprop_extraer_de_listado,
+         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-1.html"),
+        (zonaprop_extraer_de_listado,
+         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-2.html"),
+        (zonaprop_extraer_de_listado,
+         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-3.html"),
+        (zonaprop_extraer_de_listado,
+         "https://www.zonaprop.com.ar/casas-departamentos-ph-alquiler-capital-federal-olivos-florida-mas-de-2-ambientes-mas-50-m2-cubiertos-publicado-hace-menos-de-2-dias-menos-800-dolar-pagina-4.html"),
+        (argenprop_extraer_de_listado,
+         'https://www.argenprop.com/departamento-alquiler-localidad-capital-federal-localidad-olivos-localidad-florida-vl-1-dormitorio-y-2-dormitorios-y-3-dormitorios-2-ambientes-y-3-ambientes-y-4-ambientes-hasta-800-dolares-desde-50-m2-cubiertos-orden-masnuevos'),
+        (argenprop_extraer_de_listado,
+         'https://www.argenprop.com/departamento-alquiler-localidad-capital-federal-localidad-olivos-localidad-florida-vl-1-dormitorio-y-2-dormitorios-y-3-dormitorios-2-ambientes-y-3-ambientes-y-4-ambientes-hasta-800-dolares-desde-50-m2-cubiertos-orden-masnuevos-pagina-2'),
+        (argenprop_extraer_de_listado,
+         'https://www.argenprop.com/departamento-alquiler-localidad-capital-federal-localidad-olivos-localidad-florida-vl-1-dormitorio-y-2-dormitorios-y-3-dormitorios-2-ambientes-y-3-ambientes-y-4-ambientes-hasta-800-dolares-desde-50-m2-cubiertos-orden-masnuevos-pagina-3'),
+        (argenprop_extraer_de_listado,
+         'https://www.argenprop.com/departamento-alquiler-localidad-capital-federal-localidad-olivos-localidad-florida-vl-1-dormitorio-y-2-dormitorios-y-3-dormitorios-2-ambientes-y-3-ambientes-y-4-ambientes-hasta-800-dolares-desde-50-m2-cubiertos-orden-masnuevos-pagina-4')
+
     ]
 
     processing_pubs: list[Publicacion] = []
-    for url in urls:
+    for extract_func, url in urls:
         html = get_listado_selenium(url)
-        publicaciones = zonaprop_extraer_de_listado(html)
+        publicaciones = extract_func(html)
         logger.info("Extraidas %d publicaciones", len(publicaciones))
         processing_pubs.extend(publicaciones)
-
+        #if len(publicaciones) < 20:
+        #    break
         logger.info("Sleeping for %ds", TIME_BETWEEN_REQUESTS_S)
         time.sleep(TIME_BETWEEN_REQUESTS_S)
 
@@ -131,6 +166,7 @@ def process(db_path, args, filters):
 
 if __name__ == '__main__':
     import argparse
+
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     parser = argparse.ArgumentParser()
@@ -155,5 +191,3 @@ if __name__ == '__main__':
         chat_id = args.chat_id
         message = "holis"
         send_message(TOKEN, chat_id, message)
-
-
