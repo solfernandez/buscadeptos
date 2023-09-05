@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
     db_path = "pubs.pickle"
     filters = ['temporal', 'temporario', 'temporal', 'amoblado', 'amueblado', 'mataderos', 'liniers', 'versalles', 'barrio norte',
-               'recoleta', 'devoto', 'once', 'lugano', 'soldati', 'mataderos']
+               'recoleta', 'devoto', 'once', 'lugano', 'soldati', 'mataderos', 'villa del parque']
 
     if args.cmd == "process":
         process(db_path, args, filters)
