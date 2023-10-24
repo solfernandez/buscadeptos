@@ -1,5 +1,5 @@
 import os
-from main import Publicacion
+from main import Publicacion, argenprop_extraer_de_listado
 from bs4 import BeautifulSoup
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
